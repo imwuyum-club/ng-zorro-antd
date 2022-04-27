@@ -14,6 +14,7 @@ import { NzOverlayModule } from 'ng-zorro-antd/core/overlay';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzSelectModule } from 'ng-zorro-antd/select';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzTreeModule } from 'ng-zorro-antd/tree';
 
 import { NzTreeSelectComponent } from './tree-select.component';
@@ -26,6 +27,7 @@ import { NzTreeSelectComponent } from './tree-select.component';
     FormsModule,
     NzSelectModule,
     NzTreeModule,
+    NzSpinModule,
     NzIconModule,
     NzEmptyModule,
     NzOverlayModule,

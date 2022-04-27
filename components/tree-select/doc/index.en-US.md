@@ -26,6 +26,7 @@ import { NzTreeSelectModule } from 'ng-zorro-antd/tree-select';
 | `[nzAllowClear]` | Whether allow clear | `boolean` | `false` |
 | `[nzPlaceHolder]` | Placeholder of the select input | `string` | - |
 | `[nzDisabled]` | Disabled or not | `boolean` | `false` |
+| `[nzLoading]` | Loading or not | `boolean` | `false` |
 | `[nzShowIcon]` | Shows the icon before a TreeNode's title. There is no default style | `boolean` | `false` |
 | `[nzShowSearch]` | Whether to display a search input in the dropdown menu(valid only in the single mode) | `boolean` | `false` | ✅ |
 | `[nzNotFoundContent]` | Specify content to show when no result matches. | `string` | - |

@@ -87,39 +87,41 @@ const TREE_SELECT_DEFAULT_CLASS = 'ant-select-dropdown ant-select-tree-dropdown'
         [dir]="dir"
         [ngStyle]="nzDropdownStyle"
       >
-        <nz-tree
-          #treeRef
-          [hidden]="isNotFound"
-          nzNoAnimation
-          nzSelectMode
-          nzBlockNode
-          [nzData]="nzNodes"
-          [nzMultiple]="nzMultiple"
-          [nzSearchValue]="inputValue"
-          [nzHideUnMatched]="nzHideUnMatched"
-          [nzShowIcon]="nzShowIcon"
-          [nzCheckable]="nzCheckable"
-          [nzAsyncData]="nzAsyncData"
-          [nzShowExpand]="nzShowExpand"
-          [nzShowLine]="nzShowLine"
-          [nzExpandedIcon]="nzExpandedIcon"
-          [nzExpandAll]="nzDefaultExpandAll"
-          [nzExpandedKeys]="expandedKeys"
-          [nzCheckedKeys]="nzCheckable ? value : []"
-          [nzSelectedKeys]="!nzCheckable ? value : []"
-          [nzTreeTemplate]="treeTemplate"
-          [nzCheckStrictly]="nzCheckStrictly"
-          [nzVirtualItemSize]="nzVirtualItemSize"
-          [nzVirtualMaxBufferPx]="nzVirtualMaxBufferPx"
-          [nzVirtualMinBufferPx]="nzVirtualMinBufferPx"
-          [nzVirtualHeight]="nzVirtualHeight"
-          (nzExpandChange)="onExpandedKeysChange($event)"
-          (nzClick)="nzTreeClick.emit($event)"
-          (nzCheckedKeysChange)="updateSelectedNodes()"
-          (nzSelectedKeysChange)="updateSelectedNodes()"
-          (nzCheckBoxChange)="nzTreeCheckBoxChange.emit($event)"
-          (nzSearchValueChange)="setSearchValues($event)"
-        ></nz-tree>
+        <nz-spin [nzSpinning]="nzLoading">
+          <nz-tree
+            #treeRef
+            [hidden]="isNotFound"
+            nzNoAnimation
+            nzSelectMode
+            nzBlockNode
+            [nzData]="nzNodes"
+            [nzMultiple]="nzMultiple"
+            [nzSearchValue]="inputValue"
+            [nzHideUnMatched]="nzHideUnMatched"
+            [nzShowIcon]="nzShowIcon"
+            [nzCheckable]="nzCheckable"
+            [nzAsyncData]="nzAsyncData"
+            [nzShowExpand]="nzShowExpand"
+            [nzShowLine]="nzShowLine"
+            [nzExpandedIcon]="nzExpandedIcon"
+            [nzExpandAll]="nzDefaultExpandAll"
+            [nzExpandedKeys]="expandedKeys"
+            [nzCheckedKeys]="nzCheckable ? value : []"
+            [nzSelectedKeys]="!nzCheckable ? value : []"
+            [nzTreeTemplate]="treeTemplate"
+            [nzCheckStrictly]="nzCheckStrictly"
+            [nzVirtualItemSize]="nzVirtualItemSize"
+            [nzVirtualMaxBufferPx]="nzVirtualMaxBufferPx"
+            [nzVirtualMinBufferPx]="nzVirtualMinBufferPx"
+            [nzVirtualHeight]="nzVirtualHeight"
+            (nzExpandChange)="onExpandedKeysChange($event)"
+            (nzClick)="nzTreeClick.emit($event)"
+            (nzCheckedKeysChange)="updateSelectedNodes()"
+            (nzSelectedKeysChange)="updateSelectedNodes()"
+            (nzCheckBoxChange)="nzTreeCheckBoxChange.emit($event)"
+            (nzSearchValueChange)="setSearchValues($event)"
+          ></nz-tree>
+        </nz-spin>
         <span *ngIf="nzNodes.length === 0 || isNotFound" class="ant-select-not-found">
           <nz-embed-empty [nzComponentName]="'tree-select'" [specificContent]="nzNotFoundContent"></nz-embed-empty>
         </span>
@@ -238,6 +240,7 @@ export class NzTreeSelectComponent extends NzTreeBase implements ControlValueAcc
   @Input() @InputBoolean() nzDisabled = false;
   @Input() @InputBoolean() nzAsyncData = false;
   @Input() @InputBoolean() nzMultiple = false;
+  @Input() @InputBoolean() nzLoading = false;
   @Input() @InputBoolean() nzDefaultExpandAll = false;
   @Input() @InputBoolean() nzCheckStrictly = false;
   @Input() nzVirtualItemSize = 28;

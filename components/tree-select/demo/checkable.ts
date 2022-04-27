@@ -6,6 +6,7 @@ import { Component } from '@angular/core';
     <nz-tree-select
       style="width: 250px"
       [(ngModel)]="value"
+      [nzLoading]="loading"
       [nzNodes]="nodes"
       (ngModelChange)="onChange($event)"
       nzShowSearch
@@ -15,6 +16,7 @@ import { Component } from '@angular/core';
   `
 })
 export class NzDemoTreeSelectCheckableComponent {
+  loading = false;
   value: string[] = ['0-0-0'];
   nodes = [
     {
@@ -59,5 +61,9 @@ export class NzDemoTreeSelectCheckableComponent {
 
   onChange($event: string[]): void {
     console.log($event);
+    this.loading = true;
+    setTimeout(() => {
+      this.loading = false;
+    }, 3000);
   }
 }
