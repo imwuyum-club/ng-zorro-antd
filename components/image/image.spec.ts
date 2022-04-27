@@ -3,6 +3,7 @@
  * found in the LICENSE file at https://github.com/NG-ZORRO/ng-zorro-antd/blob/master/LICENSE
  */
 
+import { LEFT_ARROW, RIGHT_ARROW } from '@angular/cdk/keycodes';
 import { Overlay, OverlayContainer } from '@angular/cdk/overlay';
 import { Component, DebugElement, NgModule, ViewChild } from '@angular/core';
 import {
@@ -27,7 +28,7 @@ import {
   ZoomOutOutline
 } from '@ant-design/icons-angular/icons';
 
-import { dispatchFakeEvent } from 'ng-zorro-antd/core/testing';
+import { dispatchFakeEvent, dispatchKeyboardEvent } from 'ng-zorro-antd/core/testing';
 import { NzIconModule, NZ_ICONS } from 'ng-zorro-antd/icon';
 import {
   getFitContentPosition,
@@ -400,6 +401,19 @@ describe('Preview', () => {
       fixture.detectChanges();
       previewImageElement = getPreviewImageElement();
       expect(previewImageElement.src).toContain(images[1].src);
+
+      dispatchKeyboardEvent(overlayContainerElement, 'keydown', RIGHT_ARROW);
+      tickChanges();
+      previewImageElement = getPreviewImageElement();
+      expect(previewImageElement.src).toContain(images[1].src);
+      dispatchKeyboardEvent(overlayContainerElement, 'keydown', LEFT_ARROW);
+      tickChanges();
+      previewImageElement = getPreviewImageElement();
+      expect(previewImageElement.src).toContain(images[0].src);
+      dispatchKeyboardEvent(overlayContainerElement, 'keydown', RIGHT_ARROW);
+      tickChanges();
+      previewImageElement = getPreviewImageElement();
+      expect(previewImageElement.src).toContain(images[1].src);
     }));
   });
 
@@ -429,11 +443,12 @@ describe('Preview', () => {
     it('should drag released work', fakeAsync(() => {
       context.images = [{ src: QUICK_SRC }];
       context.createUsingService();
-      const previewInstance = context.previewRef?.previewInstance;
+      const previewInstance = context.previewRef?.previewInstance!;
       tickChanges();
-      previewInstance?.onDragStarted();
-      previewInstance?.onDragReleased();
-      expect(previewInstance?.position).toEqual({ x: 0, y: 0 });
+      previewInstance.imagePreviewWrapper.nativeElement.dispatchEvent(new MouseEvent('mousedown'));
+      expect(previewInstance.isDragging).toEqual(true);
+      previewInstance.onDragReleased();
+      expect(previewInstance.position).toEqual({ x: 0, y: 0 });
     }));
 
     it('should position calculate correct', () => {

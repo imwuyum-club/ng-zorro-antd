@@ -26,9 +26,10 @@ import {
   ViewEncapsulation
 } from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { fromEvent, Subject } from 'rxjs';
+import { fromEvent, merge } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
+import { NzDestroyService } from 'ng-zorro-antd/core/services';
 import { BooleanInput, NzSizeLDSType, OnChangeType, OnTouchedType } from 'ng-zorro-antd/core/types';
 import { InputBoolean, isNotNil } from 'ng-zorro-antd/core/util';
 
@@ -38,21 +39,19 @@ import { InputBoolean, isNotNil } from 'ng-zorro-antd/core/util';
   template: `
     <div class="ant-input-number-handler-wrap">
       <span
+        #upHandler
         unselectable="unselectable"
         class="ant-input-number-handler ant-input-number-handler-up"
         (mousedown)="up($event)"
-        (mouseup)="stop()"
-        (mouseleave)="stop()"
         [class.ant-input-number-handler-up-disabled]="disabledUp"
       >
         <i nz-icon nzType="up" class="ant-input-number-handler-up-inner"></i>
       </span>
       <span
+        #downHandler
         unselectable="unselectable"
         class="ant-input-number-handler ant-input-number-handler-down"
         (mousedown)="down($event)"
-        (mouseup)="stop()"
-        (mouseleave)="stop()"
         [class.ant-input-number-handler-down-disabled]="disabledDown"
       >
         <i nz-icon nzType="down" class="ant-input-number-handler-down-inner"></i>
@@ -70,6 +69,7 @@ import { InputBoolean, isNotNil } from 'ng-zorro-antd/core/util';
         [attr.max]="nzMax"
         [placeholder]="nzPlaceHolder"
         [attr.step]="nzStep"
+        [readOnly]="nzReadOnly"
         [attr.inputmode]="nzInputMode"
         [ngModel]="displayValue"
         (ngModelChange)="onModelChange($event)"
@@ -81,7 +81,8 @@ import { InputBoolean, isNotNil } from 'ng-zorro-antd/core/util';
       provide: NG_VALUE_ACCESSOR,
       useExisting: forwardRef(() => NzInputNumberComponent),
       multi: true
-    }
+    },
+    NzDestroyService
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   encapsulation: ViewEncapsulation.None,
@@ -91,17 +92,18 @@ import { InputBoolean, isNotNil } from 'ng-zorro-antd/core/util';
     '[class.ant-input-number-lg]': `nzSize === 'large'`,
     '[class.ant-input-number-sm]': `nzSize === 'small'`,
     '[class.ant-input-number-disabled]': 'nzDisabled',
+    '[class.ant-input-number-readonly]': 'nzReadOnly',
     '[class.ant-input-number-rtl]': `dir === 'rtl'`
   }
 })
 export class NzInputNumberComponent implements ControlValueAccessor, AfterViewInit, OnChanges, OnInit, OnDestroy {
   static ngAcceptInputType_nzDisabled: BooleanInput;
+  static ngAcceptInputType_nzReadOnly: BooleanInput;
   static ngAcceptInputType_nzAutoFocus: BooleanInput;
 
   private autoStepTimer?: number;
   private parsedValue?: string | number;
   private value?: number;
-  private destroy$ = new Subject<void>();
   displayValue?: string | number;
   isFocused = false;
   disabledUp = false;
@@ -111,6 +113,11 @@ export class NzInputNumberComponent implements ControlValueAccessor, AfterViewIn
   onTouched: OnTouchedType = () => {};
   @Output() readonly nzBlur = new EventEmitter();
   @Output() readonly nzFocus = new EventEmitter();
+  /** The native `<span class="ant-input-number-handler-up"></span>` element. */
+  @ViewChild('upHandler', { static: true }) upHandler!: ElementRef<HTMLElement>;
+  /** The native `<span class="ant-input-number-handler-down"></span>` element. */
+  @ViewChild('downHandler', { static: true }) downHandler!: ElementRef<HTMLElement>;
+  /** The native `<input class="ant-input-number-input" />` element. */
   @ViewChild('inputElement', { static: true }) inputElement!: ElementRef<HTMLInputElement>;
   @Input() nzSize: NzSizeLDSType = 'default';
   @Input() nzMin: number = -Infinity;
@@ -127,6 +134,7 @@ export class NzInputNumberComponent implements ControlValueAccessor, AfterViewIn
   @Input() nzInputMode: string = 'decimal';
   @Input() nzId: string | null = null;
   @Input() @InputBoolean() nzDisabled = false;
+  @Input() @InputBoolean() nzReadOnly = false;
   @Input() @InputBoolean() nzAutoFocus = false;
   @Input() nzFormatter: (value: number) => string | number = value => value;
 
@@ -368,29 +376,29 @@ export class NzInputNumberComponent implements ControlValueAccessor, AfterViewIn
     private elementRef: ElementRef<HTMLElement>,
     private cdr: ChangeDetectorRef,
     private focusMonitor: FocusMonitor,
-    @Optional() private directionality: Directionality
+    @Optional() private directionality: Directionality,
+    private destroy$: NzDestroyService
   ) {}
 
   ngOnInit(): void {
-    this.focusMonitor
-      .monitor(this.elementRef, true)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe(focusOrigin => {
-        if (!focusOrigin) {
-          this.isFocused = false;
-          this.updateDisplayValue(this.value!);
-          this.nzBlur.emit();
-          Promise.resolve().then(() => this.onTouched());
-        } else {
-          this.isFocused = true;
-          this.nzFocus.emit();
-        }
-      });
+    this.focusMonitor.monitor(this.elementRef, true).subscribe(focusOrigin => {
+      if (!focusOrigin) {
+        this.isFocused = false;
+        this.updateDisplayValue(this.value!);
+        this.nzBlur.emit();
+        Promise.resolve().then(() => this.onTouched());
+      } else {
+        this.isFocused = true;
+        this.nzFocus.emit();
+      }
+    });
 
     this.dir = this.directionality.value;
     this.directionality.change.pipe(takeUntil(this.destroy$)).subscribe((direction: Direction) => {
       this.dir = direction;
     });
+
+    this.setupHandlersListeners();
 
     this.ngZone.runOutsideAngular(() => {
       fromEvent(this.inputElement.nativeElement, 'keyup')
@@ -441,7 +449,18 @@ export class NzInputNumberComponent implements ControlValueAccessor, AfterViewIn
 
   ngOnDestroy(): void {
     this.focusMonitor.stopMonitoring(this.elementRef);
-    this.destroy$.next();
-    this.destroy$.complete();
+  }
+
+  private setupHandlersListeners(): void {
+    this.ngZone.runOutsideAngular(() => {
+      merge(
+        fromEvent(this.upHandler.nativeElement, 'mouseup'),
+        fromEvent(this.upHandler.nativeElement, 'mouseleave'),
+        fromEvent(this.downHandler.nativeElement, 'mouseup'),
+        fromEvent(this.downHandler.nativeElement, 'mouseleave')
+      )
+        .pipe(takeUntil(this.destroy$))
+        .subscribe(() => this.stop());
+    });
   }
 }

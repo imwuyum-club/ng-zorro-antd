@@ -8,6 +8,7 @@ import { InjectionToken, TemplateRef, Type } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
 
 import { ThemeType } from '@ant-design/icons-angular';
+import { Environment } from 'monaco-editor';
 
 import { NzBreakpointEnum } from 'ng-zorro-antd/core/services';
 import {
@@ -109,8 +110,10 @@ export interface ButtonConfig {
 
 export interface CodeEditorConfig {
   assetsRoot?: string | SafeUrl;
+  extraConfig?: NzSafeAny;
   defaultEditorOption?: NzSafeAny;
   useStaticLoading?: boolean;
+  monacoEnvironment?: Environment;
 
   onLoad?(): void;
 

@@ -5,7 +5,7 @@ import { FormBuilder, FormGroup, FormsModule, ReactiveFormsModule } from '@angul
 import { By } from '@angular/platform-browser';
 import { take } from 'rxjs/operators';
 
-import { createKeyboardEvent, dispatchEvent, dispatchFakeEvent } from 'ng-zorro-antd/core/testing';
+import { createKeyboardEvent, createMouseEvent, dispatchEvent, dispatchFakeEvent } from 'ng-zorro-antd/core/testing';
 
 import { NzInputNumberComponent } from './input-number.component';
 import { NzInputNumberModule } from './input-number.module';
@@ -14,7 +14,11 @@ describe('input number', () => {
   beforeEach(fakeAsync(() => {
     TestBed.configureTestingModule({
       imports: [NzInputNumberModule, FormsModule, ReactiveFormsModule],
-      declarations: [NzTestInputNumberBasicComponent, NzTestInputNumberFormComponent]
+      declarations: [
+        NzTestInputNumberBasicComponent,
+        NzTestInputNumberFormComponent,
+        NzTestReadOnlyInputNumberBasicComponent
+      ]
     });
     TestBed.compileComponents();
   }));
@@ -425,6 +429,24 @@ describe('input number', () => {
           done();
         });
       });
+      it('should not run change detection when `mouseup` and `mouseleave` events are dispatched on handlers', () => {
+        const appRef = TestBed.inject(ApplicationRef);
+        spyOn(appRef, 'tick');
+        spyOn(inputNumber.componentInstance, 'stop').and.callThrough();
+
+        const mouseupEvent = createMouseEvent('mouseup');
+        const mouseleaveEvent = createMouseEvent('mouseleave');
+
+        upHandler.dispatchEvent(mouseupEvent);
+        upHandler.dispatchEvent(mouseleaveEvent);
+
+        downHandler.dispatchEvent(mouseupEvent);
+        downHandler.dispatchEvent(mouseleaveEvent);
+
+        expect(appRef.tick).not.toHaveBeenCalled();
+        // We have dispatched 4 events that are followed by calling `stop()`.
+        expect(inputNumber.componentInstance.stop).toHaveBeenCalledTimes(4);
+      });
     });
   });
 
@@ -467,6 +489,34 @@ describe('input number', () => {
       expect(testComponent.formGroup.get('inputNumber')!.value).toBe(10);
     }));
   });
+  describe('input number readOnly', () => {
+    let fixture: ComponentFixture<NzTestReadOnlyInputNumberBasicComponent>;
+    let testComponent: NzTestReadOnlyInputNumberBasicComponent;
+    let inputNumber: DebugElement;
+    let inputElement: HTMLInputElement;
+
+    beforeEach(fakeAsync(() => {
+      fixture = TestBed.createComponent(NzTestReadOnlyInputNumberBasicComponent);
+      fixture.detectChanges();
+      flush();
+      fixture.detectChanges();
+      testComponent = fixture.debugElement.componentInstance;
+
+      inputNumber = fixture.debugElement.query(By.directive(NzInputNumberComponent));
+      inputElement = inputNumber.nativeElement.querySelector('input');
+    }));
+    it('should readOnly work', () => {
+      fixture.detectChanges();
+      testComponent.readonly = true;
+      testComponent.nzInputNumberComponent.nzReadOnly = true;
+      testComponent.nzInputNumberComponent.ngAfterViewInit();
+      fixture.detectChanges();
+      expect(inputElement.attributes.getNamedItem('readOnly')!.name).toBe('readonly');
+      testComponent.readonly = false;
+      fixture.detectChanges();
+      expect(inputElement.attributes.getNamedItem('readOnly')).toBe(null);
+    });
+  });
 });
 
 @Component({
@@ -503,6 +553,14 @@ export class NzTestInputNumberBasicComponent {
   formatter = (value: number): string => (value !== null ? `${value}` : '');
   parser = (value: number): number => value;
   modelChange = jasmine.createSpy('change callback');
+}
+
+@Component({
+  template: ` <nz-input-number [nzReadOnly]="readonly"></nz-input-number> `
+})
+export class NzTestReadOnlyInputNumberBasicComponent {
+  @ViewChild(NzInputNumberComponent, { static: false }) nzInputNumberComponent!: NzInputNumberComponent;
+  readonly = false;
 }
 
 @Component({
